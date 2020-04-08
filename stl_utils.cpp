@@ -1,7 +1,7 @@
 #include <cassert>
 
 #include "stl_utils.h"
-
+#include "renderer.h" //normalize
 
 inline bool startsWith(const std::string& s, const std::string& patt) {
     return s.find(patt) == 0;
@@ -70,7 +70,7 @@ void STLModel::load_ascii_stl(const std::string& fname) {
        ifs >> token; assert(token == "endloop");
        ifs >> token; assert(token == "endfacet");
     }
-    normalize();
+    normalize(vertices);
 }
 
 void STLModel::load_binary_stl(const std::string& fname) {
@@ -87,13 +87,13 @@ void STLModel::load_binary_stl(const std::string& fname) {
     
     vertices.reserve(num_tri);
 
-    auto cpy_vert = [](char* buff, Vec3<float> &v) {
+    auto cpy_vert = [](char* buff, Vec3f &v) {
         v.x = *reinterpret_cast<float*>(buff);
         v.y = *reinterpret_cast<float*>(buff+4);
-        v.z = *reinterpret_cast<float*>(buff+4);
+        v.z = *reinterpret_cast<float*>(buff+4*2);
     };
 
-    Vec3<float> v;
+    Vec3f v;
     for(int i = 0; i < num_tri; ++i) {
         ifs.read(buff, 50);
         int offset = 3*4; //skip normal vector
@@ -105,21 +105,6 @@ void STLModel::load_binary_stl(const std::string& fname) {
         cpy_vert(buff + offset * 3, v);
         vertices.push_back(v);
     }
-    normalize();
+    normalize(vertices);
 }
 
-void STLModel::normalize() {
-    //normalize to (-1, 1)
-    const auto& v0 = vertices[0];
-    float maxx = v0.x, maxy = v0.y, maxz = v0.z;
-    for(const auto& v: vertices) {
-        maxx = std::max(maxx, std::abs(v.x));
-        maxy = std::max(maxy, std::abs(v.y));
-        maxz = std::max(maxz, std::abs(v.z));
-    }
-    
-    Vec3<float> scale(maxx, maxy, maxz);
-    for(auto& v: vertices) {
-        v /= scale;
-    }
-}

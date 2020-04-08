@@ -14,6 +14,5 @@ private:
     void load_ascii_stl(const std::string&);
     void load_binary_stl(const std::string&);
 
-    void normalize();
     std::vector<Vec3<float>> vertices;
 };

@@ -5,16 +5,16 @@
 #include "datatypes.hpp"
 
 template<typename DrawFunc>
-void DrawLine(Vec2<int> p1, Vec2<int> p2, DrawFunc&& draw) {
-    if(p1.x > p2.x) 
-        std::swap(p1, p2);
-
+void DrawLine(Vec2i p1, Vec2i p2, DrawFunc&& draw) {
     bool steep = false;
-    if(std::abs(p2.y - p1.y) > (p2.x - p1.x)) {
+    if(std::abs(p2.y - p1.y) > std::abs(p2.x - p1.x)) {
         steep = true;
         std::swap(p1.x, p1.y);
         std::swap(p2.x, p2.y);
     }
+
+    if(p1.x > p2.x) 
+        std::swap(p1, p2);
 
     const int dy = p2.y - p1.y;
     const int dx = p2.x - p1.x;
@@ -34,7 +34,7 @@ void DrawLine(Vec2<int> p1, Vec2<int> p2, DrawFunc&& draw) {
 
 
 template<typename DrawFunc>
-void FillTriangle(Vec2<int> A, Vec2<int> B, Vec2<int> C, DrawFunc&& draw) {
+void FillTriangle(Vec2i A, Vec2i B, Vec2i C, DrawFunc&& draw) {
     int min_x = A.x, max_x = A.x;
     int min_y = A.y, max_y = A.y;
     for(const auto& p: {A, B, C}) {
@@ -48,7 +48,7 @@ void FillTriangle(Vec2<int> A, Vec2<int> B, Vec2<int> C, DrawFunc&& draw) {
 
     for(int x = min_x; x <= max_x; ++x) {
         for(int y = min_y; y <= max_y; ++y) {
-            Vec2<int> PA{A.x - x, A.y - y};
+            Vec2i PA{A.x - x, A.y - y};
 
             Vec3<int> v1{AB.x, AC.x, PA.x}, v2{AB.y, AC.y, PA.y};
             Vec3<int> cross = v1.cross_product(v2);
@@ -61,6 +61,9 @@ void FillTriangle(Vec2<int> A, Vec2<int> B, Vec2<int> C, DrawFunc&& draw) {
     }
 }
 
-Vec2<float> OrthogonalTransform(const Vec3<float>& coord, int width, int height) {
+inline Vec2<float> OrthogonalTransform(const Vec3f& coord, int width, int height) {
     return {(coord.x + 1) / 2.f *width, (coord.y + 1) / 2.f * height};
 }
+
+
+void normalize(std::vector<Vec3f>&);
