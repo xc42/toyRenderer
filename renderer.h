@@ -1,5 +1,6 @@
 #pragma once
-#include <cstdlib>
+
+#include <cassert>
 #include <algorithm>
 
 #include "datatypes.hpp"
@@ -32,38 +33,81 @@ void DrawLine(Vec2i p1, Vec2i p2, DrawFunc&& draw) {
     }
 }
 
+template<typename T>
+Rect<T> BoundingBox(const std::vector<Vec2<T>>& vs) {
+    Rect<T> box{{std::numeric_limits<T>::max(), std::numeric_limits<T>::max()},
+                {std::numeric_limits<T>::min(), std::numeric_limits<T>::min()}};
+
+    for(const auto& v: vs) {
+        box.lb.x = std::min(box.lb.x, v.x);
+        box.lb.y = std::min(box.lb.y, v.y);
+        box.rt.x = std::max(box.rt.x, v.x);
+        box.rt.y = std::max(box.rt.y, v.y);
+    }
+    return box;
+}
+
+template<typename T>
+Vec3f Barycentric(const Vec2<T>& A, const Vec2<T>& B, const Vec2<T>& C, const Vec2<T>& P) {
+    const auto AB = B - A, AC = C - A, AP = P - A;
+    /*
+    if(AB.x * AC.y == AC.x * AB.y) { //A, B, C lies one a line
+        return {-1,-1,-1}; //this point will be discard
+    } else {
+        Matrix2x2<int> mat ({AB.x, AC.x}, {AB.y, AC.y});
+        const auto& [can_invert, inv] = mat.invert();
+        assert(can_invert); //if ABC is triangle it must can be inverted
+        auto uv = inv * AP; 
+        return {1.f-uv[0]-uv[1], uv[0], uv[1]};
+    }
+    */
+    Vec3i uv1 = Vec3i{AB.x, AC.x, -AP.x}.cross_product(Vec3i{AB.y, AC.y, -AP.y});
+    if(uv1.z != 0) {
+        return {1.f - (uv1.x + uv1.y)/float(uv1.z), uv1.x/float(uv1.z), uv1.y/float(uv1.z)};
+    }else {
+        return {-1, -1, -1};
+    }
+}
+
 
 template<typename DrawFunc>
-void FillTriangle(Vec2i A, Vec2i B, Vec2i C, DrawFunc&& draw) {
-    int min_x = A.x, max_x = A.x;
-    int min_y = A.y, max_y = A.y;
-    for(const auto& p: {A, B, C}) {
-        min_x = std::min(min_x, p.x);
-        min_y = std::min(min_y, p.y);
-        max_x = std::max(max_x, p.x);
-        max_y = std::max(max_y, p.y);
+void FillTriangle(const Vec2i& A, const Vec2i& B, const Vec2i& C, DrawFunc&& draw) {
+    const auto& box = BoundingBox(std::vector{A, B, C});
+    for(int x = box.lb.x; x <= box.rt.x; ++x) {
+        for(int y = box.lb.y; y <= box.rt.y; ++y) {
+            auto coord = Barycentric(A, B, C, {x, y});
+            if(coord.x < 0 || coord.y < 0 || coord.z < 0) continue; //point (x,y) not in triangle
+
+            draw(x, y);
+        }
     }
+}
 
-    const auto AB = B - A, AC = C - A;
+template<typename Projection, typename DrawFunc>
+void FillTriangle(const Vec3f& A, const Vec3f& B, const Vec3f& C, 
+        Array2D<float> &zbuff,  Projection &&proj, DrawFunc&& draw) {
 
-    for(int x = min_x; x <= max_x; ++x) {
-        for(int y = min_y; y <= max_y; ++y) {
-            Vec2i PA{A.x - x, A.y - y};
+    const auto sA = proj(A), sB = proj(B), sC = proj(C); //screen coord
+    const auto& box = BoundingBox(std::vector{sA, sB, sC});
 
-            Vec3<int> v1{AB.x, AC.x, PA.x}, v2{AB.y, AC.y, PA.y};
-            Vec3<int> cross = v1.cross_product(v2);
+    for(int x = box.lb.x; x <= box.rt.x; ++x) {
+        for(int y = box.lb.y; y <= box.rt.y; ++y) {
+            auto coord = Barycentric(sA, sB, sC, {x, y});
+            if(coord.x < 0 || coord.y < 0 || coord.z < 0) continue; //point (x,y) not in triangle
 
-            if(cross.z < 0) { cross *= -1; }
-            if(cross.x >= 0 && cross.y >= 0 && cross.x + cross.y < cross.z) { //point (x,y) in triangle
+            float z = -(coord.x * A.z + coord.y * B.z + coord.z * C.z);
+            if(z < zbuff[x][y]) {
+                zbuff[x][y] = z;
                 draw(x, y);
             }
         }
     }
 }
 
-inline Vec2<float> OrthogonalTransform(const Vec3f& coord, int width, int height) {
-    return {(coord.x + 1) / 2.f *width, (coord.y + 1) / 2.f * height};
+inline Vec2i OrthogonalTransform(const Vec3f& coord, int width, int height) {
+    return Vec2i{static_cast<int>((coord.x + 1) / 2.f *width), static_cast<int>((coord.y + 1) / 2.f * height)};
 }
 
 
 void normalize(std::vector<Vec3f>&);
+float rand_float();

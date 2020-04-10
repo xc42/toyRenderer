@@ -12,5 +12,5 @@ link_directories("/usr/lib/ImageMagick-7.0.10")
 
 #imagemagick lib
 target_link_libraries(toyRenderer MagickCore-7.Q16HDRI Magick++-7.Q16HDRI)
-option(MAGICKCORE_HDRI_ENABLE 0)
-option(MAGICKCORE_QUANTUM_DEPTH 16)
+#add_compile_definitions(MAGICKCORE_HDRI_ENABLE 0)
+#add_compile_definitions(MAGICKCORE_QUANTUM_DEPTH 16)

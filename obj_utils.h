@@ -8,6 +8,8 @@ class ObjModel {
 private:
 	std::vector<Vec3f> vertices_;
 	std::vector<std::vector<int> > faces_;
+    std::vector<Vec2f> texture_coords_;
+	std::vector<std::vector<int> > texture_coords_idx_;
 public:
 	ObjModel(const char *filename);
 	int nverts(){ return (int)vertices_.size(); }
@@ -38,14 +40,9 @@ public:
 
     //};
 
-    std::vector<Vec3f> face(int idx){
-        const auto& iface = faces_[idx];
-        std::vector<Vec3f> f;
+    std::vector<Vec3f> face(int idx);
 
-        for(int i: iface)
-            f.emplace_back(vertices_[i]);
-        return f;
-    }
+    std::vector<Vec2f> face_texture(int idx);
 
 };
 
