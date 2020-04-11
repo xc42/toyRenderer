@@ -3,7 +3,7 @@
 #include "stl_utils.h"
 #include "obj_utils.h"
 
-#include<ImageMagick-7/Magick++.h>
+#include <Magick++.h>
 #include <iostream>
 #include <cassert>
 
@@ -137,8 +137,8 @@ void TEST_OBJ_ZBUFFER(int argc, const char **argv) {
 
     const Vec3f light_vec = {0.f, 0.f, -1.f};
     Array2D<float> zbuff(1024, std::vector<float>(1024, std::numeric_limits<float>::max()));
-    const int twidth = texture.boundingBox().width();
-    const int theight = texture.boundingBox().height();
+    const int twidth = texture.baseColumns();
+    const int theight = texture.baseRows();
 
     auto w2s = [](const Vec3f& v) { return OrthogonalTransform(v, 1000, 1000); };
     for(int i = 0; i < model.nfaces(); ++i) {
