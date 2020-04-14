@@ -4,7 +4,6 @@
 #include <sstream>
 #include <vector>
 #include "obj_utils.h"
-#include "renderer.h" //normalize
 
 ObjModel::ObjModel(const char *filename) : vertices_(), faces_() {
     std::ifstream in;
@@ -25,7 +24,7 @@ ObjModel::ObjModel(const char *filename) : vertices_(), faces_() {
             iss >> trash;
             float x, y;
             iss >> x >> y;
-            texture_coords_.emplace_back(x, y);
+            texture_coords_.push_back({x, y});
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<int> vids(3);
             std::vector<int> vtids(3);
@@ -46,7 +45,6 @@ ObjModel::ObjModel(const char *filename) : vertices_(), faces_() {
         }
     }
     std::cerr << "# v# " << vertices_.size() << " f# "  << faces_.size() << std::endl;
-    normalize(vertices_);
 }
 
 std::vector<Vec3f> ObjModel::face(int idx){

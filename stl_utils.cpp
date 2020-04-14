@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "stl_utils.h"
-#include "renderer.h" //normalize
 
 inline bool startsWith(const std::string& s, const std::string& patt) {
     return s.find(patt) == 0;
@@ -64,13 +63,12 @@ void STLModel::load_ascii_stl(const std::string& fname) {
            ifs >> token;
            assert(token == "vertex");
            ifs >> v1 >> v2 >> v3;
-           vertices.emplace_back(v1, v2, v3);
+           vertices.push_back({v1, v2, v3});
        }
 
        ifs >> token; assert(token == "endloop");
        ifs >> token; assert(token == "endfacet");
     }
-    normalize(vertices);
 }
 
 void STLModel::load_binary_stl(const std::string& fname) {
@@ -88,9 +86,9 @@ void STLModel::load_binary_stl(const std::string& fname) {
     vertices.reserve(num_tri);
 
     auto cpy_vert = [](char* buff, Vec3f &v) {
-        v.x = *reinterpret_cast<float*>(buff);
-        v.y = *reinterpret_cast<float*>(buff+4);
-        v.z = *reinterpret_cast<float*>(buff+4*2);
+        v[0] = *reinterpret_cast<float*>(buff);
+        v[1] = *reinterpret_cast<float*>(buff+4);
+        v[2] = *reinterpret_cast<float*>(buff+4*2);
     };
 
     Vec3f v;
@@ -105,6 +103,5 @@ void STLModel::load_binary_stl(const std::string& fname) {
         cpy_vert(buff + offset * 3, v);
         vertices.push_back(v);
     }
-    normalize(vertices);
 }
 
