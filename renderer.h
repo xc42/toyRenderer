@@ -108,13 +108,16 @@ void FillTriangle(const Point3f& A, const Point3f& B, const Point3f& C,
     }
 }
 
-inline Vec2i OrthogonalTransform(const Vec3f& coord, int width, int height) {
-    return Vec2i{static_cast<int>((coord[0] + 1) / 2.f *width), static_cast<int>((coord[1] + 1) / 2.f * height)};
-}
 
 
 Matrix4x4f LookAt(const Point3f& eye, const Point3f& center, const Vec3f &up);
-Matrix4x4f PerspectiveProjection();
+Matrix4x4f PerspectiveProjection(int l, int r, int b, int t, int near, int far);
+Matrix4x4f PerspectiveProjection(float fovy, float aspect, int n, int f);
+Matrix4x4f OrthogonalProjection(int l, int r, int b, int t, int near, int far);
+Matrix4x4f ViewPort(int x, int y, int w, int h);
+
+Matrix4x4f Translate(float x, float y, float z);
+Matrix4x4f Scale(float x, float y, float z);
 
 void normalize(std::vector<Vec3f>&);
 float rand_float();

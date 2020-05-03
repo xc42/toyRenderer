@@ -18,7 +18,7 @@ struct Vec {
         data_[N-1] = last;
     }
 
-    T  operator[](int idx) const{ return data_[idx]; }
+    const T&  operator[](int idx) const{ return data_[idx]; }
     T& operator[](int idx) { return data_[idx]; }
 
 #define vec_op_scalar(OP) \
@@ -69,9 +69,11 @@ struct Vec {
 
     T* begin() { return data_; }
     T* end() { return data_ + N; }
+    const T* begin() const { return data_; }
+    const T* end() const { return data_ + N; }
 
     template<typename OT>
-    auto  dot_product(const Vec<N, OT> & v) {
+    auto  dot_product(const Vec<N, OT> & v) const {
         decltype(OT()*T()) ans{};
         for(int i = 0; i < N; ++i) 
             ans += data_[i] * v[i];
@@ -124,18 +126,19 @@ template<int N, int M, typename T>
 struct Matrix {
     using RowType = Vec<M, T>;
     using ColType = Vec<N, T>;
-    enum class Stacking {ByRow, ByColumn};
+    struct ByRow{};
+    struct ByColumn{};
 
     RowType data_[N];
 
     Matrix()=default;
 
 private:
-    Matrix(const std::initializer_list<RowType>& rows, float* tag=nullptr) { 
+    Matrix(const std::initializer_list<RowType>& rows, ByRow) { 
         std::copy_n(rows.begin(), N, data_); 
     }
 
-    Matrix(const std::initializer_list<ColType>& cols, int* tag=nullptr) {
+    Matrix(const std::initializer_list<ColType>& cols, ByColumn) {
         auto pcol = cols.begin();
         for(int i = 0; i < M; ++i, ++pcol) {
             for(int j = 0; j < N; ++j) {
@@ -146,17 +149,15 @@ private:
 
 public:
 
-    template<int D, typename TAG = std::enable_if_t<D == N || D == M>>
-    Matrix(const std::initializer_list<Vec<D, T>>& vecs, Stacking type = Stacking::ByRow) {
-        if constexpr (M != N) {
-            Matrix(vecs);
-        } else {
-            type == Stacking::ByRow? Matrix(vecs, (float*)0): Matrix(vecs, (int*)0);
-        }
-    }
+    template<int D, typename Stack = ByRow, typename TAG = std::enable_if_t<D == N || D == M>>
+    Matrix(const std::initializer_list<Vec<D, T>>& vecs, Stack s=Stack{}):
+        Matrix(vecs, std::conditional_t<M == N, Stack, std::conditional_t<D == M, ByRow, ByColumn>>{})
+    {}
 
     RowType* begin() { return data_; }
     RowType* end() { return data_ + N; }
+    const RowType* begin() const { return data_; }
+    const RowType* end() const { return data_ + N; }
 
     RowType& operator[](const int idx) { return data_[idx]; }
 
@@ -168,13 +169,14 @@ public:
 
     template<int D>
     Matrix<N, D, T> operator*(const Matrix<M, D, T>& m) const{
-        Matrix<N, D, T> ans;
-        for(int i = 0; i < N; ++i)
+        Matrix<N, D, T> ans{};
+        for(int i = 0; i < N; ++i) {
             for(int j = 0; j < D; ++j) {
-                ans[i][j] = 0;
-                for(int k = 0; k < M; ++k) 
+                for(int k = 0; k < M; ++k) {
                     ans[i][j] += data_[i][k] * m.data_[k][j];
+                }
             }
+        }
         return ans;
     }
 
@@ -187,6 +189,15 @@ public:
     }
 
 };
+
+template<int N, typename T>
+auto Identity() {
+    Matrix<N, N, T> id{};
+    for(int i = 0; i < N; ++i) {
+        id[i][i] = 1;
+    }
+    return id;
+}
 
 template<typename T>
 using Matrix2x2 = Matrix<2, 2, T>;
